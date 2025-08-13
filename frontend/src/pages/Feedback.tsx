@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { feedbackSchema } from "../validation/schemas";
-import { apiUser } from "../lib/api";
 import ErrorText from "../components/ErrorText";
+import { createFeedback } from "../services/feedback.service";
+import { getApiError } from "../services/errors";
+import { apiUser } from "../lib/api";
 
 type Fb = { _id: string; rating: number; comment: string; emotion: string; createdAt: string };
 type Form = { rating: number; comment: string };
@@ -19,18 +21,18 @@ export default function FeedbackPage() {
     setList(data.feedback);
   };
 
+
+
   useEffect(() => { load(); }, []);
-
-  const onSubmit = async (values: Form) => {
-    try {
-      await apiUser.post("/api/feedback", values);
-      reset({ rating: 5, comment: "" });
-      await load();
-    } catch (e: any) {
-      alert(e?.response?.data?.message || "Failed to submit");
-    }
-  };
-
+const onSubmit = async (values: Form) => {
+  try {
+    await createFeedback(values);
+    reset({ rating: 5, comment: "" });
+    await load();
+  } catch (e) {
+    alert(getApiError(e, "Failed to submit"));
+  }
+};
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-xl shadow">

@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { InferType } from "yup";
 import { adminLoginSchema } from "../../validation/schemas";
-import { apiAdmin } from "../../lib/api";
+import { adminLogin } from "../../services/auth.service";
 import { setAdminToken } from "../../lib/auth";
+import { getApiError } from "../../services/errors";
 
 type AdminLoginForm = InferType<typeof adminLoginSchema>;
 
@@ -19,17 +20,15 @@ export default function AdminLogin() {
     resolver: yupResolver(adminLoginSchema),
     mode: "onChange",
   });
-
-  const onSubmit = async (values: AdminLoginForm) => {
-    try {
-      const { data } = await apiAdmin.post("/api/admin/login", values);
-      setAdminToken(data.token);
-      nav("/admin/dashboard");
-    } catch (e: any) {
-      alert(e?.response?.data?.message || "Login failed");
-    }
-  };
-
+const onSubmit = async (values: AdminLoginForm) => {
+  try {
+    const data = await adminLogin(values);
+    setAdminToken(data.token);
+    nav("/admin/dashboard");
+  } catch (e) {
+    alert(getApiError(e, "Login failed"));
+  }
+};
   return (
     <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
       <h1 className="text-xl font-semibold mb-4">Admin Login</h1>

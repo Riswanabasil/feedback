@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { apiAdmin } from "../../lib/api";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { getAdminSummary } from "../../services/admin.service";
 
 type Summary = {
   byEmotion: { emotion: string; count: number }[];
@@ -12,18 +12,7 @@ type Summary = {
 export default function AdminDashboard() {
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await apiAdmin.get<Summary>("/api/admin/summary");
-        setData(data);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
+useEffect(() => { (async () => setData(await getAdminSummary()))().finally(() => setLoading(false)); }, []);
   if (loading) return <div>Loading...</div>;
   if (!data) return <div>Failed to load summary.</div>;
 

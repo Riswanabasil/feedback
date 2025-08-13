@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { InferType } from "yup";
 import { adminFeedbackFilterSchema } from "../../validation/schemas";
-import { apiAdmin } from "../../lib/api";
+import { getAdminFeedback, getAdminSummary } from "../../services/admin.service";
 
 type AdminItem = {
   _id: string;
@@ -14,15 +14,6 @@ type AdminItem = {
   createdAt: string;
   user?: { _id: string; name: string; email: string } | null;
 };
-
-type AdminResp = {
-  items: AdminItem[];
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-};
-
 type FilterForm = InferType<typeof adminFeedbackFilterSchema>;
 
 const PAGE_SIZES = [5, 10, 20];
@@ -40,17 +31,11 @@ export default function AdminFeedback() {
       defaultValues: { emotion: "", minRating: undefined },
       mode: "onChange",
     });
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await apiAdmin.get("/api/admin/summary");
-        const opts = (data?.byEmotion || []).map((x: any) => x.emotion).filter(Boolean);
-        setEmotions(opts);
-      } catch {
-        setEmotions([]);
-      }
-    })();
-  }, []);
+
+  useEffect(() => { (async () => {
+  const s = await getAdminSummary();
+  setEmotions(s.byEmotion.map(x => x.emotion).filter(Boolean));
+})() }, []);
   const [filter, setFilter] = useState<FilterForm>({ emotion: "", minRating: undefined });
 
   const queryParams = useMemo(() => {
@@ -61,15 +46,12 @@ export default function AdminFeedback() {
   }, [page, limit, filter]);
 
   const load = async () => {
-    setLoading(true);
-    try {
-      const { data } = await apiAdmin.get<AdminResp>("/api/admin/feedback", { params: queryParams });
-      setItems(data.items);
-      setTotal(data.total);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const data = await getAdminFeedback(queryParams);
+    setItems(data.items); setTotal(data.total);
+  } finally { setLoading(false); }
+};
   useEffect(() => { load(); }, [page, limit, filter]);
 
   const onApply = (values: FilterForm) => {

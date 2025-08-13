@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { signupSchema } from "../validation/schemas";
-import { apiUser } from "../lib/api";
+import { signup } from "../services/auth.service";
+import { getApiError } from "../services/errors";
 import { setUserToken } from "../lib/auth";
 import ErrorText from "../components/ErrorText";
 
@@ -15,17 +16,15 @@ export default function Signup() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<Form>({ resolver: yupResolver(signupSchema), mode: "onChange" });
-
-  const onSubmit = async (values: Form) => {
-    try {
-      const { data } = await apiUser.post("/api/auth/signup", values);
-      setUserToken(data.token);
-      nav("/feedback");
-    } catch (e: any) {
-      alert(e?.response?.data?.message || "Signup failed");
-    }
-  };
-
+const onSubmit = async (values: Form) => {
+  try {
+    const data = await signup(values);
+    setUserToken(data.token);
+    nav("/feedback");
+  } catch (e) {
+    alert(getApiError(e, "Signup failed"));
+  }
+};
   return (
     <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
       <h1 className="text-xl font-semibold mb-4">Create account</h1>
